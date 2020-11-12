@@ -1,0 +1,28 @@
+{
+    "name": "datingapi",
+    "version": "1.0.0",
+    "description": "Dating project api",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server",
+        "server": "nodemon server",
+        "migration": "node migrations/create",
+        "drop": "node migrations/drop"
+    },
+    "author": "Thenya Kamau",
+    "license": "ISC",
+    "devDependencies": {
+        "nodemon": "^2.0.6"
+    },
+    "dependencies": {
+        "africastalking": "^0.5.2",
+        "bcryptjs": "^2.4.3",
+        "colors": "^1.4.0",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "morgan": "^1.10.0",
+        "mysql": "^2.18.1",
+        "passport": "^0.4.1",
+        "passport-local": "^1.0.0"
+    }
+}
