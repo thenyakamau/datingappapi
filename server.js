@@ -1,4 +1,5 @@
 const express = require("express");
+const http = require("http");
 const dotenv = require("dotenv");
 const path = require("path");
 const morgan = require("morgan");
@@ -6,12 +7,15 @@ const colors = require("colors");
 const database = require("./config/database");
 const userRoute = require("./routes/user");
 const indexRouter = require("./routes/index");
+const fileUpload = require("express-fileupload");
 
 dotenv.config({ path: ".env" });
 
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(fileUpload());
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
