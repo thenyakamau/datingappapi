@@ -24,14 +24,14 @@ passport.use(
       jwtFromRequest: ExtractJwt.fromHeader("authorization"),
       secretOrKey: process.env.JWT_KEY,
     },
-    async (payload, done) => {
+    (payload, done) => {
       try {
         fetchUserByUuid(payload.sub, (error, result) => {
           if (error) {
             return done(null, false, { message: "something went wrong" });
           }
           if (result != null && result.length > 0) {
-            return done(null, user);
+            return done(null, result[0]);
           } else {
             return done(null, false, { message: "Could not find user" });
           }

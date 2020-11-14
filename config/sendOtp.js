@@ -37,4 +37,4 @@ function sendMessage(phone, message) {
     });
 }
 
-exports.sendMessage = sendMessage;
+module.exports = sendMessage;

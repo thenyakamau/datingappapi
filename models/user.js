@@ -13,13 +13,27 @@ function fetchUserByUuid(uuid, callback) {
 
 exports.fetchUserByUuid = fetchUserByUuid;
 
-function createUserViaPhone(phone, uuid, callback) {
-  let sql = `INSERT INTO users set unique_id = '${uuid}', phone = ${phone}`;
+function createUserViaPhone(phone, uuid, otp, callback) {
+  let sql = `INSERT INTO users set unique_id = '${uuid}', phone = ${phone}, otp = ${otp}`;
   database.query(sql);
   return fetchUser(phone, callback);
 }
 
 exports.createUserViaPhone = createUserViaPhone;
+
+function updateUserOtp(otp, user_id, callback) {
+  let sql = `UPDATE users set otp = ${otp} WHERE id = ${user_id}`;
+  database.query(sql, callback);
+}
+
+exports.updateUserOtp = updateUserOtp;
+
+function checkOtp(otp, user_id, callback) {
+  let sql = `SELECT * FROM users WHERE otp = ${otp} AND id = ${user_id}`;
+  return database.query(sql, callback);
+}
+
+exports.checkOtp = checkOtp;
 
 function updateProfile(user, callback) {
   const {
@@ -36,7 +50,7 @@ function updateProfile(user, callback) {
     relation,
   } = user;
   let sql =
-    "UPDATE books set name = ?, dob = ?, gender = ?, profession = ?, lat = ?, lon = ?, county = ?, height = ?, character_type = ?, relation = ?,   WHERE phone = ?";
+    "UPDATE users set name = ?, dob = ?, gender = ?, profession = ?, lat = ?, lon = ?, county = ?, height = ?, character_type = ?, relation = ?,  WHERE phone = ?";
 
   database.query(
     sql,

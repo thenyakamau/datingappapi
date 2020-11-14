@@ -9,4 +9,10 @@ function randomString(length) {
   return result;
 }
 
-module.exports = randomString;
+exports.randomString = randomString;
+
+function randomOtp() {
+  return Math.floor(Math.random() * 100000);
+}
+
+exports.randomOtp = randomOtp;
