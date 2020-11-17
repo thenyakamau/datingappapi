@@ -100,12 +100,12 @@ function confirmOtpCode(req, res, next) {
       if (result[0].name == null) {
         return res.status(201).json({
           success: true,
-          data: response,
+          data: result[0],
         });
       } else {
         return res.status(200).json({
           success: true,
-          data: response,
+          data: result[0],
         });
       }
     } else {
