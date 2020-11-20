@@ -13,48 +13,45 @@ function fetchUserByUuid(uuid, callback) {
 
 exports.fetchUserByUuid = fetchUserByUuid;
 
-function createUserViaPhone(phone, uuid, otp, callback) {
-  let sql = `INSERT INTO users set unique_id = '${uuid}', phone = ${phone}, otp = ${otp}`;
+function createUserViaPhone(phone, uuid, callback) {
+  let sql = `INSERT INTO users set unique_id = '${uuid}', phone = ${phone}`;
   database.query(sql);
   return fetchUser(phone, callback);
 }
 
 exports.createUserViaPhone = createUserViaPhone;
 
-function updateUserOtp(otp, user_id, callback) {
-  let sql = `UPDATE users set otp = ${otp} WHERE id = ${user_id}`;
-  database.query(sql, callback);
+function createUserOtp(otp, user_id, callback) {
+  let expirationDate = new Date().setDate(new Date().getDate() + 1);
+  let date = new Date(expirationDate)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+  let sql = `INSERT INTO otp_tokens set otp = '${otp}', user_id = ${user_id}, expires = '${date}'`;
+  return database.query(sql, callback);
 }
 
-exports.updateUserOtp = updateUserOtp;
+exports.createUserOtp = createUserOtp;
 
 function checkOtp(otp, user_id, callback) {
-  let sql = `SELECT * FROM users WHERE otp = ${otp} AND id = ${user_id}`;
-  return database.query(sql, callback);
+  let currentTime = new Date().getTime();
+  let date = new Date(currentTime).toISOString().slice(0, 19).replace("T", " ");
+  let checkSql = `SELECT * FROM otp_tokens WHERE otp = ${otp} AND user_id = ${user_id} AND used = ${0} AND expires >= '${date}'`;
+  return database.query(checkSql, callback);
 }
 
 exports.checkOtp = checkOtp;
 
-function updateProfile(user, callback) {
-  const {
-    name,
-    dob,
-    gender,
-    phone,
-    profession,
-    lat,
-    lon,
-    county,
-    height,
-    character_type,
-    relation,
-  } = user;
-  let sql =
-    "UPDATE users set name = ?, dob = ?, gender = ?, profession = ?, lat = ?, lon = ?, county = ?, height = ?, character_type = ?, relation = ?,  WHERE phone = ?";
+function updateOtpStatus(otp, user_id, callback) {
+  let sql = `UPDATE otp_tokens set used = ${1} WHERE otp = ${otp} AND user_id = ${user_id}`;
+  database.query(sql, callback);
+}
 
-  database.query(
-    sql,
-    [
+exports.updateOtpStatus = updateOtpStatus;
+
+function updateProfile(user, user_id, imageFile, callback) {
+  if (imageFile == null) {
+    const {
       name,
       dob,
       gender,
@@ -65,10 +62,33 @@ function updateProfile(user, callback) {
       height,
       character_type,
       relation,
-      phone,
-    ],
-    callback
-  );
+    } = user;
+    let sql = `UPDATE users set name = '${name}', dob = '${dob}', gender = ${gender}, profession = '${profession}', lat = ${lat}, lon = ${lon}, county = '${county}', height = ${height}, character_type = ${character_type}, relation = ${relation}  WHERE id = ${user_id}`;
+
+    database.query(sql);
+  } else {
+    const {
+      name,
+      dob,
+      gender,
+      profession,
+      lat,
+      lon,
+      county,
+      height,
+      character_type,
+      relation,
+    } = user;
+    let sql = `UPDATE users set name = '${name}', dob = '${dob}', gender = ${gender}, profession = '${profession}', lat = ${lat}, lon = ${lon}, county = '${county}', height = ${height}, character_type = ${character_type}, relation = ${relation}, image = '${imageFile}'  WHERE id = ${user_id}`;
+
+    database.query(sql);
+  }
+  return fetchUserById(user_id, callback);
 }
 
 exports.updateProfile = updateProfile;
+
+function fetchUserById(user_id, callback) {
+  let sql = `SELECT * FROM users WHERE id = '${user_id}'`;
+  return database.query(sql, callback);
+}
