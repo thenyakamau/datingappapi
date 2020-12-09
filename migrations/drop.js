@@ -1,21 +1,9 @@
-const database = require("../config/database");
+const User = require("../models/user");
 
-function dropOtp() {
-  let sql = "DROP TABLE IF EXISTS otp_tokens";
-  database.query(sql, (error, result) => {
-    if (error) throw error;
-    return result;
+User.drop()
+  .then((res) => {
+    console.log("User table dropped");
+  })
+  .catch((error) => {
+    console.error("Something went wrong", error);
   });
-}
-
-dropOtp();
-
-function dropUsers() {
-  let sql = "DROP TABLE IF EXISTS users";
-  database.query(sql, (error, result) => {
-    if (error) throw error;
-    return result;
-  });
-}
-
-dropUsers();

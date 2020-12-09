@@ -1,146 +1,144 @@
 const generateJwtToken = require("../config/jwt");
-const {
-  fetchUser,
-  createUserViaPhone,
-  fetchUserByUuid,
-  createUserOtp,
-  checkOtp,
-  updateOtpStatus,
-  updateProfile,
-} = require("../models/user");
+// const {
+//   fetchUser,
+//   createUserViaPhone,
+//   fetchUserByUuid,
+//   createUserOtp,
+//   checkOtp,
+//   updateOtpStatus,
+//   updateProfile,
+// } = require("../models/user");
 const { randomString, randomOtp } = require("../utils/RandomString");
 const sendMessage = require("../config/sendOtp");
 const saveImage = require("../config/SaveImage");
+const User = require("../models/user");
+const OtpToken = require("../models/otp_tokens");
 
 function authenticateUser(req, res, next) {
-  const otpCode = randomOtp();
-  fetchUser(req.body.phone, (error, result) => {
-    if (error) {
-      const messages = "Something went wrong";
-      return res.status(500).json({
-        success: false,
-        error: messages,
-      });
-    }
-    if (result != null && result.length > 0) {
-      const response = {
-        user: result[0],
-        token: generateJwtToken(result[0]),
-      };
-      createUserOtp(otpCode, result[0].id, (err, record) => {
-        if (err) {
-          const messages = "Something went wrong with otp code";
-          return res.status(500).json({
-            success: false,
-            error: messages,
-          });
-        }
-        sendMessage(
-          req.body.phone,
-          `Otp confirmation code: ${otpCode} , Expires after 24 hours`
-        );
-        if (result[0].name == null) {
-          return res.status(201).json({
-            success: true,
-            data: response,
-          });
-        } else {
-          return res.status(200).json({
-            success: true,
-            data: response,
-          });
-        }
-      });
-    } else {
-      const uuid = randomString(10);
-      fetchUserByUuid(uuid, (error, result) => {
-        if (error) {
-          const messages = "Something went wrong";
-          return res.status(500).json({
-            success: false,
-            error: messages,
-          });
-        }
-        if (result != null && result.length > 0) {
-          uuid = randomString(10);
-        }
+  const { phone } = req.body;
 
-        createUserViaPhone(req.body.phone, uuid, (error, result) => {
-          if (error) {
-            console.log(error);
+  User.findOne({
+    where: {
+      phone: phone,
+    },
+  })
+    .then((user) => {
+      if (user != null) {
+        sendOtpCode(user, phone, res);
+      } else {
+        User.create({ phone: phone })
+          .then((user) => {
+            sendOtpCode(user, phone, res);
+          })
+          .catch((error) => {
+            console.error("There is an error", error);
             const messages = "Something went wrong";
             return res.status(500).json({
               success: false,
               error: messages,
             });
-          }
-          createUserOtp(otpCode, result[0].id, (err, record) => {
-            if (err) {
-              const messages = "Something went wrong";
-              return res.status(500).json({
-                success: false,
-                error: messages,
-              });
-            }
-            sendMessage(
-              req.body.phone,
-              `Otp confirmation code: ${otpCode} , Expires after 24 hours`
-            );
-            const response = {
-              user: result[0],
-              token: generateJwtToken(result[0]),
-            };
-            return res.status(201).json({
-              success: true,
-              data: response,
-            });
           });
-        });
-      });
-    }
-  });
-}
-
-exports.authenticateUser = authenticateUser;
-
-function confirmOtpCode(req, res, next) {
-  checkOtp(req.body.otp, req.user.id, (error, result) => {
-    if (error) {
+      }
+    })
+    .catch((error) => {
       const messages = "Something went wrong";
       return res.status(500).json({
         success: false,
         error: messages,
       });
-    }
+    });
+}
 
-    if (result != null && result.length > 0) {
-      updateOtpStatus(req.body.otp, req.user.id, (err, record) => {
-        if (err) {
+exports.authenticateUser = authenticateUser;
+
+function confirmOtpCode(req, res, next) {
+  const { otpCode } = req.body;
+  let currentTime = new Date().getTime();
+  let date = new Date(currentTime).toISOString().slice(0, 19).replace("T", " ");
+  OtpToken.findOne({
+    where: {
+      otp: otpCode,
+      expires: {
+        [Op.gte]: date,
+      },
+      used: 0,
+      userId: req.user.id,
+    },
+  })
+    .then((otp) => {
+      OtpToken.update(
+        { used: 1 },
+        {
+          where: {
+            id: otp.id,
+          },
+        }
+      )
+        .then((otp2) => {
+          if (req.user.name == null) {
+            return res.status(201).json({
+              success: true,
+              data: req.user,
+            });
+          } else {
+            return res.status(200).json({
+              success: true,
+              data: req.user,
+            });
+          }
+        })
+        .catch((error) => {
           const messages = "Something went wrong";
           return res.status(500).json({
             success: false,
             error: messages,
           });
-        }
-        if (req.user.name == null) {
-          return res.status(201).json({
-            success: true,
-            data: req.user,
-          });
-        } else {
-          return res.status(200).json({
-            success: true,
-            data: req.user,
-          });
-        }
-      });
-    } else {
-      return res.status(401).json({
+        });
+    })
+    .catch((error) => {
+      const messages = "Something went wrong";
+      return res.status(500).json({
         success: false,
-        data: { message: "Otp message not confirmed" },
+        error: messages,
       });
-    }
-  });
+    });
+
+  // checkOtp(req.body.otp, req.user.id, (error, result) => {
+  //   if (error) {
+  //     const messages = "Something went wrong";
+  //     return res.status(500).json({
+  //       success: false,
+  //       error: messages,
+  //     });
+  //   }
+  //   if (result != null && result.length > 0) {
+  //     updateOtpStatus(req.body.otp, req.user.id, (err, record) => {
+  //       if (err) {
+  //         const messages = "Something went wrong";
+  //         return res.status(500).json({
+  //           success: false,
+  //           error: messages,
+  //         });
+  //       }
+  //       if (req.user.name == null) {
+  //         return res.status(201).json({
+  //           success: true,
+  //           data: req.user,
+  //         });
+  //       } else {
+  //         return res.status(200).json({
+  //           success: true,
+  //           data: req.user,
+  //         });
+  //       }
+  //     });
+  //   } else {
+  //     return res.status(401).json({
+  //       success: false,
+  //       data: { message: "Otp message not confirmed" },
+  //     });
+  //   }
+  // });
 }
 
 exports.confirmOtpCode = confirmOtpCode;
@@ -202,3 +200,42 @@ exports.logOut = logOut;
 function deleteAccount(req, res, next) {}
 
 exports.deleteAccount = deleteAccount;
+
+function sendOtpCode(user, phone, res) {
+  const otpCode = randomOtp();
+  const response = {
+    user: user,
+    token: generateJwtToken(user),
+  };
+  let expirationDate = new Date().setDate(new Date().getDate() + 1);
+  let date = new Date(expirationDate)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+  OtpToken.create({ otp: otpCode, userId: user.id, expires: date })
+    .then((otp) => {
+      sendMessage(
+        phone,
+        `Otp confirmation code: ${otpCode} , Expires after 24 hours`
+      );
+      if (user.name == null) {
+        return res.status(201).json({
+          success: true,
+          data: response,
+        });
+      } else {
+        return res.status(200).json({
+          success: true,
+          data: response,
+        });
+      }
+    })
+    .catch((error) => {
+      console.log("This is the error", error);
+      const messages = "Something went wrong";
+      return res.status(500).json({
+        success: false,
+        error: messages,
+      });
+    });
+}
