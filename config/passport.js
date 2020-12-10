@@ -3,7 +3,7 @@ const localstrategy = require("passport-local").Strategy;
 const JwtStrategy = require("passport-jwt").Strategy;
 const { ExtractJwt } = require("passport-jwt");
 const dotenv = require("dotenv");
-const { fetchUserByUuid } = require("../models/user");
+const User = require("../models/user");
 
 dotenv.config({ path: ".env" });
 
@@ -26,16 +26,17 @@ passport.use(
     },
     (payload, done) => {
       try {
-        fetchUserByUuid(payload.sub, (error, result) => {
-          if (error) {
-            return done(null, false, { message: "something went wrong" });
-          }
-          if (result != null && result.length > 0) {
-            return done(null, result[0]);
-          } else {
+        User.findOne({
+          where: {
+            unique_id: payload.sub,
+          },
+        })
+          .then((user) => {
+            return done(null, user);
+          })
+          .catch((error) => {
             return done(null, false, { message: "Could not find user" });
-          }
-        });
+          });
       } catch (error) {
         return done(null, false, { message: "something went wrong" });
       }

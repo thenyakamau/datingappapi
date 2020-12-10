@@ -1,18 +1,10 @@
 const generateJwtToken = require("../config/jwt");
-// const {
-//   fetchUser,
-//   createUserViaPhone,
-//   fetchUserByUuid,
-//   createUserOtp,
-//   checkOtp,
-//   updateOtpStatus,
-//   updateProfile,
-// } = require("../models/user");
 const { randomString, randomOtp } = require("../utils/RandomString");
 const sendMessage = require("../config/sendOtp");
 const saveImage = require("../config/SaveImage");
 const User = require("../models/user");
 const OtpToken = require("../models/otp_tokens");
+const { Op } = require("sequelize");
 
 function authenticateUser(req, res, next) {
   const { phone } = req.body;
@@ -102,43 +94,6 @@ function confirmOtpCode(req, res, next) {
         error: messages,
       });
     });
-
-  // checkOtp(req.body.otp, req.user.id, (error, result) => {
-  //   if (error) {
-  //     const messages = "Something went wrong";
-  //     return res.status(500).json({
-  //       success: false,
-  //       error: messages,
-  //     });
-  //   }
-  //   if (result != null && result.length > 0) {
-  //     updateOtpStatus(req.body.otp, req.user.id, (err, record) => {
-  //       if (err) {
-  //         const messages = "Something went wrong";
-  //         return res.status(500).json({
-  //           success: false,
-  //           error: messages,
-  //         });
-  //       }
-  //       if (req.user.name == null) {
-  //         return res.status(201).json({
-  //           success: true,
-  //           data: req.user,
-  //         });
-  //       } else {
-  //         return res.status(200).json({
-  //           success: true,
-  //           data: req.user,
-  //         });
-  //       }
-  //     });
-  //   } else {
-  //     return res.status(401).json({
-  //       success: false,
-  //       data: { message: "Otp message not confirmed" },
-  //     });
-  //   }
-  // });
 }
 
 exports.confirmOtpCode = confirmOtpCode;
@@ -169,26 +124,26 @@ async function updateAccount(req, res, next) {
     }
   }
 
-  updateProfile(user, user_id, imageFile, (error, result) => {
-    if (error) {
+  const userBody = { ...user, image: imageFile };
+
+  User.update(userBody, {
+    where: {
+      id: user_id,
+    },
+  })
+    .then((user) => {
+      return res.status(200).json({
+        success: true,
+        data: req.user,
+      });
+    })
+    .catch((error) => {
       const messages = "Something went wrong";
       return res.status(500).json({
         success: false,
         error: messages,
       });
-    }
-    if (result != null && result.length > 0) {
-      return res.status(200).json({
-        success: true,
-        data: result[0],
-      });
-    } else {
-      return res.status(401).json({
-        success: false,
-        data: { message: "Could not updated profile" },
-      });
-    }
-  });
+    });
 }
 
 exports.updateAccount = updateAccount;
