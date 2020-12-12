@@ -5,7 +5,6 @@ const { Op } = require("sequelize");
 
 function fetchConversation(req, res, next) {
 
-
     Conversation.findAll({
         where: {
             [Op.or]: [
@@ -21,27 +20,35 @@ function fetchConversation(req, res, next) {
             order: ["createdAt", "ASC"],
         }
     }).then(conversation => {
-        User.findAll({
+
+        //get single from list
+        for (var i = 0; i < conversation.length; i++) {
+            conversation.userId = conversation[i].userId;
+            conversation.secondUserId = conversation[i].secondUserId;
+        }
+
+        //fetch the second user from the conversation
+        User.findOne({
             where: {
-                id: req.user.id
+                id: conversation.secondUserId != req.user.id ? conversation.secondUserId : conversation.userId,
             }
         }).then(users => {
             return res.status(200).json({
                 success: true,
                 user: users,
-                data: conversation,
+                conversation: conversation,
 
             });
         }).catch(err => {
-            const messages = "Something went wrong";
+            const messages = err.toString();
             return res.status(500).json({
                 success: false,
                 error: messages,
             });
         })
 
-    }).catch(error => {
-        const messages = "Something went wrong";
+    }).catch(err => {
+        const messages = err.toString();;
         return res.status(500).json({
             success: false,
             error: messages,
@@ -56,7 +63,7 @@ function createConversation(req, res, next) {
 
     Conversation.create({
         userId: req.user.id,
-        secondUserId: id,
+        secondUserId: parseInt(id),
     }).then(
         conversation => {
             Message.create({
@@ -70,8 +77,8 @@ function createConversation(req, res, next) {
                     data: conversation,
                     message: message,
                 });
-            }).catch(error => {
-                const messages = "Something went wrong";
+            }).catch(err => {
+                const messages = err.toString();;
                 return res.status(500).json({
                     success: false,
                     error: messages,
@@ -79,7 +86,7 @@ function createConversation(req, res, next) {
             })
         }
     ).catch(err => {
-        const messages = "Something went wrong";
+        const messages = err.toString();;
         return res.status(500).json({
             success: false,
             error: messages,
@@ -95,16 +102,16 @@ function createMessage(req, res, next) {
     Message.create({
         body: message,
         read: 0,
-        conversationId: id,
+        conversationId: parseInt(id),
         userId: req.user.id,
     }).then(message => {
         return res.status(200).json({
             success: true,
-            data: message,
+            message: message,
             // message: message,
         });
     }).catch(err => {
-        const messages = "Something went wrong";
+        const messages = err.toString();;
         return res.status(500).json({
             success: false,
             error: messages,
@@ -114,6 +121,21 @@ function createMessage(req, res, next) {
 
 exports.createMessage = createMessage
 
-function readConversation(req, res, next) {}
+function readConversation(req, res, next) {
+    const { id } = req.body;
+
+    Message.update({ read: 1, }, { where: { conversationId: id } }).then(message => {
+        return res.status(200).json({
+            success: true,
+            message: message,
+        });
+    }).catch(err => {
+        const messages = err.toString();;
+        return res.status(500).json({
+            success: false,
+            error: messages,
+        });
+    });
+}
 
 exports.readConversation = readConversation
