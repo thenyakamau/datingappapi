@@ -5,7 +5,8 @@ const {
     fetchConversation,
     createConversation,
     createMessage,
-    readConversation
+    readConversation,
+    deliverMessage,
 } = require("../controllers/conversation")
 
 const passportJWT = passport.authenticate("jwt", {
@@ -18,6 +19,8 @@ router
     .post(passportJWT, createConversation)
     .put(passportJWT, readConversation);
 
-router.route("/message").post(passportJWT, createMessage)
+router.route("/message")
+    .post(passportJWT, createMessage)
+    .put(passportJWT, deliverMessage) // message deliveries
 
 module.exports = router;

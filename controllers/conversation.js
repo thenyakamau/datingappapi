@@ -1,24 +1,22 @@
 const User = require("../models/user");
 const Message = require("../models/message");
 const Conversation = require("../models/conversation")
-const { Op } = require("sequelize");
+const {
+    Op
+} = require("sequelize");
 
 function fetchConversation(req, res, next) {
 
     Conversation.findAll({
         where: {
-            [Op.or]: [
-                { userId: req.user.id },
-                { secondUserId: req.user.id }
+            [Op.or]: [{
+                    userId: req.user.id
+                },
+                {
+                    secondUserId: req.user.id
+                }
             ]
         },
-        order: [
-            ["updatedAt", "DESC"],
-        ],
-        include: {
-            model: Message,
-            order: ["createdAt", "ASC"],
-        }
     }).then(conversation => {
 
         //get single from list
@@ -27,16 +25,38 @@ function fetchConversation(req, res, next) {
             conversation.secondUserId = conversation[i].secondUserId;
         }
 
-        //fetch the second user from the conversation
-        User.findOne({
+        //fetch the second uOneser from the conversation
+        Conversation.findAll({
             where: {
-                id: conversation.secondUserId != req.user.id ? conversation.secondUserId : conversation.userId,
-            }
+                [Op.or]: [{
+                        userId: req.user.id
+                    },
+                    {
+                        secondUserId: req.user.id
+                    }
+                ]
+            },
+            order: [
+                ["updatedAt", "DESC"],
+            ],
+
+            //fetch second user....of the conversation
+            include: [{
+                model: User,
+                as: conversation.secondUserId != req.user.id ? "secondUser" : null,
+
+            }, {
+                model: Message,
+                order: ["createdAt", "ASC"],
+                include: {
+                    model: User
+                },
+                // model: User
+            }, ],
         }).then(users => {
             return res.status(200).json({
                 success: true,
-                user: users,
-                conversation: conversation,
+                conversation: users,
 
             });
         }).catch(err => {
@@ -59,7 +79,10 @@ function fetchConversation(req, res, next) {
 exports.fetchConversation = fetchConversation
 
 function createConversation(req, res, next) {
-    const { id, message } = req.body
+    const {
+        id,
+        message
+    } = req.body
 
     Conversation.create({
         userId: req.user.id,
@@ -74,11 +97,11 @@ function createConversation(req, res, next) {
             }).then(message => {
                 return res.status(200).json({
                     success: true,
-                    data: conversation,
+                    conversation: conversation,
                     message: message,
                 });
             }).catch(err => {
-                const messages = err.toString();;
+                const messages = err.toString();
                 return res.status(500).json({
                     success: false,
                     error: messages,
@@ -97,7 +120,10 @@ function createConversation(req, res, next) {
 exports.createConversation = createConversation
 
 function createMessage(req, res, next) {
-    const { id, message } = req.body
+    const {
+        id,
+        message
+    } = req.body
 
     Message.create({
         body: message,
@@ -122,9 +148,17 @@ function createMessage(req, res, next) {
 exports.createMessage = createMessage
 
 function readConversation(req, res, next) {
-    const { id } = req.body;
+    const {
+        id
+    } = req.body;
 
-    Message.update({ read: 1, }, { where: { conversationId: id } }).then(message => {
+    Message.update({
+        read: 1,
+    }, {
+        where: {
+            conversationId: id
+        }
+    }).then(message => {
         return res.status(200).json({
             success: true,
             message: message,
@@ -139,3 +173,9 @@ function readConversation(req, res, next) {
 }
 
 exports.readConversation = readConversation
+
+function deliverMessage(req, res, next) {
+
+}
+
+exports.deliverMessage = deliverMessage

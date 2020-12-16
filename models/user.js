@@ -1,6 +1,8 @@
 const database = require("../config/database");
 const Sequelize = require("sequelize");
 const OtpToken = require("./otp_tokens");
+const Message = require("./message")
+const Conversation = require("./conversation")
 
 const User = database.define("users", {
     unique_id: {
@@ -14,7 +16,7 @@ const User = database.define("users", {
         type: Sequelize.STRING,
     },
     gender: {
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
     },
     phone: {
         type: Sequelize.STRING,
@@ -32,13 +34,13 @@ const User = database.define("users", {
         type: Sequelize.STRING,
     },
     height: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
     },
     character_type: {
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
     },
     relation: {
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
     },
     image: {
         type: Sequelize.STRING,
@@ -54,6 +56,18 @@ OtpToken.belongsTo(User, {
     },
 });
 
-// Message.belongsTo(User)
+User.hasOne(Message)
+
+Message.belongsTo(User, {
+    onDelete: "CASCADE",
+    foreignKey: {
+        allowNull: false,
+    },
+});
+
+User.hasOne(Conversation)
+
+Conversation.belongsTo(User, )
+Conversation.belongsTo(User, { as: "secondUser" })
 
 module.exports = User;

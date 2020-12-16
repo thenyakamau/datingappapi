@@ -9,6 +9,7 @@ const userRoute = require("./routes/user");
 const conversationRoute = require("./routes/conversation");
 const indexRouter = require("./routes/index");
 const fileUpload = require("express-fileupload");
+var cors = require('cors')
 
 dotenv.config({ path: ".env" });
 
@@ -30,6 +31,8 @@ app.use(express.static(__dirname + "/public"));
 app.get("*", (req, res) => {
     res.sendFile(path.resolve(__dirname, "public", "index.html"));
 });
+
+// app.use(cors({ origin: 'http://192.168.43.121:80' }));
 
 const PORT = process.env.PORT || 500;
 

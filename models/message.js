@@ -10,9 +10,6 @@ const Message = database.define("messages", {
         type: Sequelize.INTEGER,
         defaultValue: 0,
     },
-    userId: {
-        type: Sequelize.BIGINT.UNSIGNED
-    }
 })
 
 module.exports = Message
