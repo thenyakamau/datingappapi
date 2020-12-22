@@ -5,6 +5,8 @@ const {
     Op
 } = require("sequelize");
 
+const sendFcmToken = require("../config/fcm")
+
 function fetchConversation(req, res, next) {
 
     Conversation.findAll({
@@ -17,56 +19,30 @@ function fetchConversation(req, res, next) {
                 }
             ]
         },
-    }).then(conversation => {
+        order: [
+            ["updatedAt", "DESC"],
+        ],
+        include: [{
+            model: User,
+            attributes: ['id', "name", "dob", "gender", "phone", "profession", "lat", "lon", "county", "height", "character_type", "relation", "image"]
 
-        //get single from list
-        for (var i = 0; i < conversation.length; i++) {
-            conversation.userId = conversation[i].userId;
-            conversation.secondUserId = conversation[i].secondUserId;
-        }
-
-        //fetch the second uOneser from the conversation
-        Conversation.findAll({
-            where: {
-                [Op.or]: [{
-                        userId: req.user.id
-                    },
-                    {
-                        secondUserId: req.user.id
-                    }
-                ]
-            },
-            order: [
-                ["updatedAt", "DESC"],
-            ],
-
-            //fetch second user....of the conversation
-            include: [{
+        }, {
+            model: User,
+            as: "secondUser",
+            attributes: ['id', "name", "dob", "gender", "phone", "profession", "lat", "lon", "county", "height", "character_type", "relation", "image"]
+        }, {
+            model: Message,
+            order: ["createdAt", "ASC"],
+            include: {
                 model: User,
-                as: conversation.secondUserId != req.user.id ? "secondUser" : null,
-
-            }, {
-                model: Message,
-                order: ["createdAt", "ASC"],
-                include: {
-                    model: User
-                },
-                // model: User
-            }, ],
-        }).then(users => {
-            return res.status(200).json({
-                success: true,
-                conversation: users,
-
-            });
-        }).catch(err => {
-            const messages = err.toString();
-            return res.status(500).json({
-                success: false,
-                error: messages,
-            });
+                attributes: ['id', "name", "dob", "gender", "phone", "profession", "lat", "lon", "county", "height", "character_type", "relation", "image"]
+            },
+        }]
+    }).then(conversation => {
+        return res.status(200).json({
+            success: true,
+            conversation: conversation
         })
-
     }).catch(err => {
         const messages = err.toString();;
         return res.status(500).json({
@@ -81,7 +57,7 @@ exports.fetchConversation = fetchConversation
 function createConversation(req, res, next) {
     const {
         id,
-        message
+        message,
     } = req.body
 
     Conversation.create({
@@ -95,11 +71,42 @@ function createConversation(req, res, next) {
                 conversationId: conversation.id,
                 userId: req.user.id,
             }).then(message => {
-                return res.status(200).json({
-                    success: true,
-                    conversation: conversation,
-                    message: message,
-                });
+                User.findOne({
+                    where: {
+                        id: message.userId,
+                    }
+                }).then((user) => {
+                    // sendFcmToken(user.name, message.body, fcm_tokens)
+                    User.findOne({
+                        where: {
+                            id: id,
+                        }
+                    }).then((secondUser) => {
+
+                        sendFcmToken(user.name, message.body, secondUser.fcm_token)
+
+                        return res.status(200).json({
+                            success: true,
+                            conversation: conversation,
+                            message: message,
+                            // user: secondUser
+                        });
+                    }).catch((err) => {
+                        const messages = err.toString();
+                        return res.status(500).json({
+                            success: false,
+                            error: messages,
+                        });
+
+                    })
+                }).catch((err) => {
+                    const messages = err.toString();
+                    return res.status(500).json({
+                        success: false,
+                        error: messages,
+                    });
+
+                })
             }).catch(err => {
                 const messages = err.toString();
                 return res.status(500).json({
@@ -122,7 +129,7 @@ exports.createConversation = createConversation
 function createMessage(req, res, next) {
     const {
         id,
-        message
+        message,
     } = req.body
 
     Message.create({
@@ -131,11 +138,51 @@ function createMessage(req, res, next) {
         conversationId: parseInt(id),
         userId: req.user.id,
     }).then(message => {
-        return res.status(200).json({
-            success: true,
-            message: message,
-            // message: message,
-        });
+        User.findOne({
+            where: {
+                id: message.userId
+            }
+        }).then(user => {
+            Conversation.findOne({
+                where: {
+                    id: id,
+                },
+            }).then(conversation => {
+                User.findOne({
+                    where: {
+                        id: conversation.userId == req.user.id ? conversation.secondUserId : conversation.userId
+                    }
+                }).then(secondUser => {
+
+                    sendFcmToken(user.name, message.body, secondUser.fcm_token)
+
+                    return res.status(200).json({
+                        success: true,
+                        message: message,
+                    });
+                }).catch((err) => {
+                    const messages = err.toString();;
+                    return res.status(500).json({
+                        success: false,
+                        error: messages,
+                    });
+                })
+            }).catch(err => {
+                const messages = err.toString();;
+                return res.status(500).json({
+                    success: false,
+                    error: messages,
+                });
+            })
+
+        }).catch(err => {
+            const messages = err.toString();;
+            return res.status(500).json({
+                success: false,
+                error: messages,
+            });
+        })
+
     }).catch(err => {
         const messages = err.toString();;
         return res.status(500).json({

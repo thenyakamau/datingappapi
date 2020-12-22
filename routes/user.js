@@ -9,6 +9,8 @@ const {
     logOut,
     authenticateUser,
     confirmOtpCode,
+    findAllUsers,
+    updateFcmToken
 } = require("../controllers/user");
 
 //token guards
@@ -18,12 +20,15 @@ const passportJWT = passport.authenticate("jwt", {
 
 router.route("/login").post(authenticateUser);
 
+
 //authenticated User
 router.route("/confirmCode").post(passportJWT, confirmOtpCode);
 router.route("/logout").post(passportJWT, logOut)
+router.route("/get").get(passportJWT, findAllUsers);
 router
     .route("/")
     .get(passportJWT, fetchProfile)
+    .put(passportJWT, updateFcmToken)
     .post(passportJWT, updateAccount)
     .delete(passportJWT, deleteAccount);
 
