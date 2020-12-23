@@ -5,7 +5,7 @@ admin.initializeApp({
   databaseURL: "https://csqadmin.firebaseio.com",
 });
 
-function sendFcmToken({ title, message, token }) {
+function sendFcmToken({ title, message, token, data }) {
   //!tokens can be an array of multiple tokens
   //! This registration token comes from the client FCM SDKs.
   var registrationToken = token;
@@ -17,10 +17,11 @@ function sendFcmToken({ title, message, token }) {
       title: title,
       body: message,
     },
-    // data: {
-    //   score: "850",
-    //   time: "2:45",
-    // },
+    data: {
+      title: title,
+      body: data,
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
+    },
   };
 
   // Set the message as high priority and have it expire after 24 hours.
@@ -46,7 +47,7 @@ function sendFcmToken({ title, message, token }) {
 
 exports.sendFcmToken = sendFcmToken;
 
-function sendGroupFcmToken({ title, message, nkey }) {
+function sendGroupFcmToken({ title, message, nkey, data }) {
   // See the "Managing device groups" link above on how to generate a
   // notification key.
   var notificationKey = nkey;
@@ -58,10 +59,11 @@ function sendGroupFcmToken({ title, message, nkey }) {
       title: title,
       body: message,
     },
-    // data: {
-    //   score: "850",
-    //   time: "2:45",
-    // },
+    data: {
+      title: title,
+      body: data,
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
+    },
   };
 
   // Send a message to the device group corresponding to the provided
