@@ -1,7 +1,8 @@
 var admin = require("firebase-admin");
+var serviceAccount = require("C:/Users/kim/Desktop/JOB/json/service-account-file.json");
 
 admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
+  credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://csqadmin.firebaseio.com",
 });
 
@@ -45,7 +46,7 @@ function sendFcmToken({ title, message, token, data }) {
     });
 }
 
-exports.sendFcmToken = sendFcmToken;
+module.exports = sendFcmToken;
 
 function sendGroupFcmToken({ title, message, nkey, data }) {
   // See the "Managing device groups" link above on how to generate a
