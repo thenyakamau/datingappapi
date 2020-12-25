@@ -2,7 +2,8 @@ const User = require("../models/user");
 const Message = require("../models/message");
 const Conversation = require("../models/conversation")
 const {
-    Op
+    Op,
+    json
 } = require("sequelize");
 
 const sendFcmToken = require("../config/fcm")
@@ -70,10 +71,10 @@ function createConversation(req, res, next) {
                 read: 0,
                 conversationId: conversation.id,
                 userId: req.user.id,
-            }).then(message => {
+            }).then(messages => {
                 User.findOne({
                     where: {
-                        id: message.userId,
+                        id: messages.userId,
                     }
                 }).then((user) => {
                     // sendFcmToken(user.name, message.body, fcm_tokens)
@@ -82,8 +83,15 @@ function createConversation(req, res, next) {
                             id: id,
                         }
                     }).then((secondUser) => {
+                        // console.log(message.toJSON())
 
-                        sendFcmToken(user.name, message.body, secondUser.fcm_token)
+                        sendFcmToken({
+                            title: user.name,
+                            message: message,
+                            token: secondUser.fcm_token.toString(),
+                            data: messages.toJSON().toString(),
+                        })
+
 
                         return res.status(200).json({
                             success: true,
@@ -137,10 +145,10 @@ function createMessage(req, res, next) {
         read: 0,
         conversationId: parseInt(id),
         userId: req.user.id,
-    }).then(message => {
+    }).then(messages => {
         User.findOne({
             where: {
-                id: message.userId
+                id: messages.userId
             }
         }).then(user => {
             Conversation.findOne({
@@ -153,12 +161,16 @@ function createMessage(req, res, next) {
                         id: conversation.userId == req.user.id ? conversation.secondUserId : conversation.userId
                     }
                 }).then(secondUser => {
-
-                    sendFcmToken(user.name, message.body, secondUser.fcm_token)
+                    sendFcmToken({
+                        title: user.name,
+                        message: message,
+                        token: secondUser.fcm_token.toString(),
+                        data: messages.toJSON().toString(),
+                    })
 
                     return res.status(200).json({
                         success: true,
-                        message: message,
+                        message: messages,
                     });
                 }).catch((err) => {
                     const messages = err.toString();;

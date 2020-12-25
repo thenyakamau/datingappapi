@@ -23,9 +23,9 @@ function authenticateUser(req, res, next) {
                     .then((user) => {
                         sendOtpCode(user, phone, res);
                     })
-                    .catch((error) => {
-                        console.error("There is an error", error);
-                        const messages = "Something went wrong";
+                    .catch((err) => {
+                        console.error("There is an error", err);
+                        const messages = err.toString();
                         return res.status(500).json({
                             success: false,
                             error: messages,
@@ -33,8 +33,8 @@ function authenticateUser(req, res, next) {
                     });
             }
         })
-        .catch((error) => {
-            const messages = "Something went wrong";
+        .catch((err) => {
+            const messages = err.toString();
             return res.status(500).json({
                 success: false,
                 error: messages,
@@ -77,16 +77,16 @@ function confirmOtpCode(req, res, next) {
                         });
                     }
                 })
-                .catch((error) => {
-                    const messages = "Something went wrong";
+                .catch((err) => {
+                    const messages = err.toString();
                     return res.status(500).json({
                         success: false,
                         error: messages,
                     });
                 });
         })
-        .catch((error) => {
-            const messages = "Something went wrong";
+        .catch((err) => {
+            const messages = err.toString();
             return res.status(500).json({
                 success: false,
                 error: messages,
