@@ -7,9 +7,10 @@ const colors = require("colors");
 const database = require("./config/database");
 const userRoute = require("./routes/user");
 const conversationRoute = require("./routes/conversation");
+const matchRouter = require("./routes/match");
 const indexRouter = require("./routes/index");
 const fileUpload = require("express-fileupload");
-var cors = require('cors')
+var cors = require("cors");
 
 dotenv.config({ path: ".env" });
 
@@ -20,16 +21,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
 
 if (process.env.NODE_ENV === "development") {
-    app.use(morgan("dev"));
+  app.use(morgan("dev"));
 }
 
 app.use("/user", userRoute);
 app.use("/conversation", conversationRoute);
+app.use("/match", matchRouter);
 
 app.use(express.static(__dirname + "/public"));
 
 app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "public", "index.html"));
+  res.sendFile(path.resolve(__dirname, "public", "index.html"));
 });
 
 // app.use(cors({ origin: 'http://192.168.43.121:80' }));
@@ -37,8 +39,8 @@ app.get("*", (req, res) => {
 const PORT = process.env.PORT || 500;
 
 app.listen(
-    PORT,
-    console.log(
-        `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold
-    )
+  PORT,
+  console.log(
+    `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold
+  )
 );
