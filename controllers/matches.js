@@ -37,7 +37,11 @@ function fetchPotentialsByLocation(req, res, next) {
   })
     .then((users) => {
       let u_id = c_user.id;
-      checkUser(users, res, u_id);
+      if (users.length > 5) {
+        checkUser(users, res, u_id);
+      } else {
+        fetchAllPotentials(req, res, next);
+      }
     })
     .catch((err) => {
       const messages = err.toString();
@@ -109,7 +113,7 @@ function createMatch(req, res, next) {
   const { s_id } = req.body;
   const c_user = req.user;
   Matches.create({ f_id: c_user.id, s_id: s_id })
-    .then((res) => {
+    .then((match) => {
       return res.status(200).json({
         success: true,
         message: "Match created",
@@ -169,20 +173,28 @@ async function checkUser(users, res, u_id) {
     let matches = await Matches.findAll({
       where: { [Op.or]: [{ f_id: u_id }, { s_id: u_id }] },
     });
+
     let viewUsers = [];
     for (let i = 0; i < users.length; i++) {
-      const user = users[i];
-      matches.forEach((match) => {
-        if (match.f_id != user.id && match.s_id != user.id) {
+      let user = users[i];
+
+      if (user.name && user.county) {
+        if (matches.length > 0) {
+          matches.forEach((match) => {
+            if (match.f_id != user.id && match.s_id != user.id) {
+              viewUsers.push(user);
+            }
+          });
+        } else {
           viewUsers.push(user);
         }
-      });
-      return res.status(200).json({
-        success: true,
-        data: viewUsers,
-      });
+      }
     }
-  } catch (error) {
+    return res.status(200).json({
+      success: true,
+      data: viewUsers,
+    });
+  } catch (err) {
     const messages = err.toString();
     return res.status(500).json({
       success: false,

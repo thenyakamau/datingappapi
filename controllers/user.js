@@ -23,7 +23,6 @@ function authenticateUser(req, res, next) {
             sendOtpCode(user, phone, res);
           })
           .catch((err) => {
-            console.error("There is an error", err);
             const messages = err.toString();
             return res.status(500).json({
               success: false,
