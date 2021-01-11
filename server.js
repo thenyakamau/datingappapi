@@ -10,11 +10,14 @@ const conversationRoute = require("./routes/conversation");
 const matchRouter = require("./routes/match");
 const indexRouter = require("./routes/index");
 const fileUpload = require("express-fileupload");
-var cors = require("cors");
+
+const cors = require("cors");
 
 dotenv.config({ path: ".env" });
 
 const app = express();
+const server = http.createServer(app);
+const socketio = require("socket.io")(server);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -34,11 +37,15 @@ app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "public", "index.html"));
 });
 
-// app.use(cors({ origin: 'http://192.168.43.121:80' }));
-
 const PORT = process.env.PORT || 500;
 
-app.listen(
+socketio.on("connection", (userSocket) => {
+  userSocket.on("send_message", (data) => {
+    userSocket.broadcast.emit("receive_message", data);
+  });
+});
+
+server.listen(
   PORT,
   console.log(
     `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow.bold

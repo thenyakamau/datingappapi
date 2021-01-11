@@ -23,6 +23,7 @@
         "express": "^4.17.1",
         "express-fileupload": "^1.2.0",
         "firebase-admin": "^9.4.2",
+        "http": "0.0.1-security",
         "jsonwebtoken": "^8.5.1",
         "morgan": "^1.10.0",
         "mysql2": "^2.2.5",
@@ -31,6 +32,7 @@
         "passport-jwt": "^4.0.0",
         "passport-local": "^1.0.0",
         "sequelize": "^6.3.5",
-        "sequelize-to-json": "^0.10.4"
+        "sequelize-to-json": "^0.10.4",
+        "socket.io": "^3.0.5"
     }
 }
