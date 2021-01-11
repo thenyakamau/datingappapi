@@ -1,8 +1,8 @@
 var admin = require("firebase-admin");
-// var serviceAccount = require("/home/kim/Desktop/JOB/json/service-account-file.json");
+var serviceAccount = require("./service-account-file.json");
 
 admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
+  credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://csqadmin.firebaseio.com",
 });
 
